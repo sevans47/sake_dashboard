@@ -4,12 +4,11 @@ Learn about the regional differences of sake made in Japan with this interactive
 
 ## Tools used
 
-The main tools used to create this dashboard are:
-- BeautifulSoup: used to collect the data via webscraping
-- Pandas: used to clean and organize the scraped data
-- Google Maps Geocoding API: used to get coordinates of sake breweries
-- Folium: used to create maps
-- Streamlit: used to create the dashboard
+- BeautifulSoup: collect the data via webscraping
+- Pandas: clean and organize the scraped data
+- Google Maps Geocoding API: get coordinates of sake breweries
+- Folium: create maps
+- Streamlit: create the dashboard
 
 ## Data collection
 
