@@ -8,3 +8,11 @@ googlemaps
 
 # for eda
 matplotlib
+
+# min reqs
+streamlit
+Pillow==9.0.1  # need this version for streamlit
+folium
+streamlit-folium
+pandas
+json
