@@ -1,9 +1,6 @@
 streamlit
-plotly
 Pillow==9.0.1  # need this version for streamlit
-
-# possibly only need these for making dfs - add to requirements-dev?
-requests
-bs4
-lxml  # needed for beautiful soup -> df
-googlemaps
+folium
+streamlit-folium
+pandas
+json
