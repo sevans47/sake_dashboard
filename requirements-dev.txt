@@ -1,1 +1,10 @@
 jupyter
+
+# possibly only need these for making dfs
+requests
+bs4
+lxml  # needed for beautiful soup -> df
+googlemaps
+
+# for eda
+matplotlib

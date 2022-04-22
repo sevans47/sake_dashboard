@@ -1,2 +1,6 @@
 creds.py
-*.csv
+company_list.csv
+prefecture_list.csv
+sake_list_final.csv
+sake_list_no_outliers.csv
+sake_list.csv
