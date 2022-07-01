@@ -10,7 +10,7 @@ from streamlit_folium import folium_static
 from folium.features import DivIcon
 
 st.set_page_config(
-    page_title="Sake Map Explorer: Introduction",
+    page_title="Sake Dashboard: Introduction",
     page_icon='🍶',
     layout="centered",
     initial_sidebar_state="expanded",
@@ -37,9 +37,12 @@ def load_data():
     # flavor profiles by area data
     df_flavor_area = pd.read_csv('data/df_flavor_area.csv', index_col='region')
 
-    return map_pref_region, jsonData, df_sake, df_flavor, df_flavor_area
+    # prefecture info from wikipedia
+    wikidf_prefecture = pd.read_csv('data/wikidf_prefecture.csv')
 
-map_pref_region, jsonData, df_sake, df_flavor, df_flavor_area = load_data()
+    return map_pref_region, jsonData, df_sake, df_flavor, df_flavor_area, wikidf_prefecture
+
+map_pref_region, jsonData, df_sake, df_flavor, df_flavor_area, wikidf_prefecture = load_data()
 
 # add data to session state (so it can be used across all pages easily)
 if "map_pref_region" not in st.session_state:
@@ -56,6 +59,9 @@ if "df_flavor" not in st.session_state:
 
 if "df_flavor_area" not in st.session_state:
    st.session_state["df_flavor_area"] = df_flavor_area
+
+if "wikidf_prefecture" not in st.session_state:
+    st.session_state["wikidf_prefecture"] = wikidf_prefecture
 
 # create sidebar?
 # add_sidebar = st.sidebar.selectbox("select map", ("acidity", "gravity"))

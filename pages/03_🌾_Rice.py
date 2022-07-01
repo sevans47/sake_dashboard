@@ -8,7 +8,7 @@ from bs4 import BeautifulSoup as bs
 
 # configure page
 st.set_page_config(
-    page_title="Rice",
+    page_title="Sake Dashboard: Rice",
     page_icon='🌾',
     layout="centered",
     initial_sidebar_state="expanded",
@@ -21,21 +21,9 @@ jsonData = st.session_state["jsonData"]
 df_sake = st.session_state["df_sake"]
 df_flavor = st.session_state['df_flavor']
 df_flavor_area = st.session_state["df_flavor_area"]
+wikidf_prefecture = st.session_state["wikidf_prefecture"]
 
 # dataframe functions
-def get_wikidf_pref():
-    # get table from wikipedia
-    wikiurl="https://en.wikipedia.org/wiki/Prefectures_of_Japan"
-    table_class="wikitable sortable jquery-tablesorter"
-    response=requests.get(wikiurl)
-    soup = bs(response.text, 'html.parser')
-    table=soup.find('table',{'class':"wikitable"})
-
-    # convert table to df
-    df_pref=pd.read_html(str(table))
-
-    return pd.DataFrame(df_pref[0])
-
 def make_top_rice_type_df(df_sake):
     rice_type_eng_dict = {
         '山田錦': 'Yamada Nishiki',
@@ -73,7 +61,6 @@ def make_top_rice_type_df(df_sake):
     df_sake['rice_origin'] = np.where((df_sake.rice_type == 'レイホウ'), '熊本県', df_sake.rice_origin)
 
     # make dictionary for jp -> eng prefecture names
-    wikidf_prefecture = get_wikidf_pref()
     dict_pref_jp_eng = dict(zip(wikidf_prefecture['Prefecture.1'], wikidf_prefecture['Prefecture']))
 
     # add columns
@@ -233,6 +220,11 @@ def top4_rice_stacked_bar(df_top4_rice):
 
 
     st.pyplot(fig)
+
+
+# page layout
+st.title("Rice (Under Construction)")
+st.write("I'm still working on this page, but here are a couple of charts to pique your interest!")
 
 plot_top_rice_types(top_rice_types)
 
