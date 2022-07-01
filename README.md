@@ -11,6 +11,7 @@ Click [here](https://share.streamlit.io/sevans47/sake_dashboard/sake_dashboard.p
 - BeautifulSoup: collect the data via webscraping
 - Pandas: clean and organize the scraped data
 - Google Maps Geocoding API: get coordinates of sake breweries
+- Matplotlib: create data visualizations
 - Folium: create maps
 - Streamlit: create the dashboard
 
@@ -27,9 +28,14 @@ The base map was created using a GeoJSON file of the Japanese prefectures, which
 The web app was made using Streamlit and is a work in progress.
 
 finished:
-- acidity analysis
-- gravity analysis
+- quick stats section
+- introduction
+- acidity / sake meter value analysis
+
+in progress:
+- rice analysis
 
 to do:
-- sake variety analysis
-- rice type analysis
+- yeast analysis
+- sake grade and type analysis
+- brewery location / climate analysis
