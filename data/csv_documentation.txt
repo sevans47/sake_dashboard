@@ -1,0 +1,91 @@
+sake_list csv
+
+name: name of the sake (in Japanese)
+name_kana: name of sake without kanji (hiragana / katakana)
+name_romaji: name of sake using the English alphabet
+sake_type: grade of sake (in Japanese)
+  - futsu-shu
+  - junmai-shu
+  - honzojo-shu
+  - ginjo-shu
+  - junmai ginjo-shu
+  - daiginjo-shu
+  - junmai daiginjo-shu
+  - tokubetsu junmai-shu
+  - tokubetsu honzojo-shu
+  - kijo-shu
+rice_type: name of rice type (in Japanese) - can be more than one
+rice_origin: name of prefecture where the rice came from (in Japanese)
+yeast: name of yeast used (in Japanese)
+rice_polishing_rate: % of each rice grain remaining after milling
+abv: alcohol by volume (% of beverage that is alcohol)
+acidity: 酸度, usually between 1.0-2.0.  Higher number = more acidic
+amino: アミノ酸度. higher amino acid rates tend to correspond with richer flavors
+gravity: 日本酒度, or Sake Meter Value (SMV).
+  - it's the density of the sake compared to pure water.
+  - higher gravity corresponds with less sugar, and vice versa
+volume: the size of the sake bottles in mL
+prefecture: which prefecture it was brewed in (in Japanese)
+city: which city it was brewed in (in Japanese)
+company: the company's name (in Japanese)
+address: the company's address (in Japanese)
+website: the company's website
+brand: the product line of the sake (in Japanese)
+categories: a list of categories the sake falls under (in Japanese)
+
+* some sake had a low and high values for abv, acidity, amino, and gravity
+abv_low
+abv_high
+abv_avg
+acidity_low
+acidity_high
+acidity_avg
+amino_low
+amino_high
+amino_avg
+gravity_low
+gravity_high
+gravity_avg
+
+prefecture_eng: prefecture name in English
+region: region name in English
+sake_type_eng: sake grade in English
+is_nama: 1 for nama
+  - nama means namazake, which is unpasteurized sake.  A sake is labeled 1 if
+    it is completely unpasteurized, or only pasteurized once (usually sake is
+    pasteurized twice)
+is_genshu: 1 for genshu
+  - genshu is undiluted sake.  Sake usually is aged at about 20% abv, then
+    diluted with water down to about 15%.  Genshu means no water is added
+is_futsu: 1 if the grade of sake is futsu-shu
+  - Futsu means 'regular' or 'normal,' and a sake is classified as futsu-shu
+    has no rice milling requirement, and larger amounts of distilled alcohol
+    can be added to it. It's basically the lowest grade of sake.
+is_special_designation: 1 if the grade of sake is not futsu-shu
+is_junmai: 1 if the only ingredients are water, rice, and koji (no added alcohol)
+is_non_junmai: 1 if the sake isn't futsu-shu, but has some added alcohol
+is_dai: 1 if the sake's grade is daiginjo or junmai daiginjo
+  - daiginjo is the highest grade of sake with the strictest brewing requirements,
+    the most basic of which is the rice grains must be polished to 50% or less
+is_nigori: 1 if the sake is nigorizake
+  - nigorizake is sake that has some of the rice lees left over in the sake,
+    resulting in a cloudy appearance
+is_kijoshu: 1 if the sake is kijoshu
+  - kijoshu is a sweet dessert sake.
+is_koshu: 1 if the sake is koshu
+  - koshu is sake that has been aged for more than a year
+is_muroka: 1 if the sake is muroka
+  - muroka is a type of unfiltered sake.  Specifically, it skips the
+    charcoal filtering step
+is_sakabune: 1 if the sake was pressed using a traditional box, called a sakabune
+  - after fermenting, the clear sake is pressed out of the mash mixture. This is
+    usually done by a machine, but traditionally a sakebune was used, which is
+    simply a box with a hole at the bottom, and a lid.  The lid is pushed down on
+    bags of mash, and the clear sake runs out the hole.
+is_shiboritate: 1 if the sake is shiboritate
+  - shiboritate means 'freshly pressed,' and it sake that has just been pressed
+    after fermenting, without being pasteurized, filtered, aged, diluted, or
+    tweaked in any way.
+
+* all these different categories of sake (nama, genshu, koshu, etc.) can be any
+  grade (futsu-shu, junmai-shu, daiginjo-shu, etc.)
