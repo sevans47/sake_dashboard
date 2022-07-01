@@ -8,7 +8,7 @@ from streamlit_folium import folium_static
 from folium.features import DivIcon
 
 st.set_page_config(
-    page_title="Acidity / SMV",
+    page_title="Sake Dashboard: Acidity / SMV",
     page_icon='💧',
     layout="centered",
     initial_sidebar_state="expanded",
