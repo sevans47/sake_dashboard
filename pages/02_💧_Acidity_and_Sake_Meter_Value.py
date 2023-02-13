@@ -4,6 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 import folium
+from scipy import stats
 from streamlit_folium import folium_static
 from folium.features import DivIcon
 
@@ -125,11 +126,11 @@ def make_smv_acid_matrix():
     # plt.title("Acidity / SMV Confusion Matrix")
 
     # color
-    alpha=0.7
-    ax.fill_between([-1, 0], -1, 0, alpha=alpha, color='#ECFEFF')  # sweet-light (light blue)
-    ax.fill_between([-1, 0], 0, 1, alpha=alpha, color='#D2AA6E')  # sweet-rich (brown)
-    ax.fill_between([0, 1], -1, 0, alpha=alpha, color='#F9D5A2')  # dry_rich (pink)
-    ax.fill_between([0, 1], 0, 1, alpha=alpha, color='#F5D1DB')  # dry_light (orange)
+    alpha=0.9
+    ax.fill_between([-1, 0], -1, 0, alpha=alpha, color='#e9fdf4')  # sweet-light (light blue)
+    ax.fill_between([-1, 0], 0, 1, alpha=alpha, color='#c1b69c')  # sweet-rich (brown)
+    ax.fill_between([0, 1], -1, 0, alpha=alpha, color='#efdebc')  # dry_light (orange)
+    ax.fill_between([0, 1], 0, 1, alpha=alpha, color='#e4c8c0')  # dry_rich (pink)
 
     st.pyplot(fig)
 
@@ -188,14 +189,15 @@ def make_straight_vs_skewed():
     axs[0].axhline(y=y_int, color='w')
     axs[0].axvline(x=x_int, color='w')
 
-    axs[0].set_ylabel('(light)                Acidity                (rich)')
-    axs[0].set_xlabel('(sweet)                Sake Meter Value                (dry)')
+    blank1 = 16
+    axs[0].set_ylabel(f'(light){" "*blank1}Acidity{" "*blank1}(rich)')
+    axs[0].set_xlabel(f'(sweet){" "*blank1}Sake Meter Value{" "*blank1}(dry)')
 
-    alpha=0.7
-    axs[0].fill_between([-30, x_int], 0.5, y_int, alpha=alpha, color='#ECFEFF') # sweet-light (light blue)
-    axs[0].fill_between([-30, x_int], y_int, 2.5, alpha=alpha, color='#D2AA6E') # sweet-rich (brown)
-    axs[0].fill_between([x_int, 30], 0.5, y_int, alpha=alpha, color='#F9D5A2') # dry_rich (pink)
-    axs[0].fill_between([x_int, 30], y_int, 2.5, alpha=alpha, color='#F5D1DB') # dry_light (orange)
+    alpha=0.9
+    axs[0].fill_between([-30, x_int], 0.5, y_int, alpha=alpha, color='#e9fdf4') # sweet-light (light blue)
+    axs[0].fill_between([-30, x_int], y_int, 2.5, alpha=alpha, color='#c1b69c') # sweet-rich (brown)
+    axs[0].fill_between([x_int, 30], 0.5, y_int, alpha=alpha, color='#efdebc') # dry_light (orange)
+    axs[0].fill_between([x_int, 30], y_int, 2.5, alpha=alpha, color='#e4c8c0') # dry_rich (pink)
 
     axs[0].text((30 + x_int) / 2, (2.5 + y_int) / 2, 'Dry-Rich', fontsize=14, bbox = dict(facecolor = 'red', alpha = 0.2), horizontalalignment='center', verticalalignment='center')
     axs[0].text((-30 + x_int) / 2, (2.5 + y_int) / 2, 'Sweet-Rich', fontsize=14, bbox = dict(facecolor = 'red', alpha = 0.2), horizontalalignment='center', verticalalignment='center')
@@ -208,8 +210,9 @@ def make_straight_vs_skewed():
     axs[1].set_ylim(0.5, 2.5)
     axs[1].set_title("Skewed Plot", fontsize=16)
 
-    axs[1].set_ylabel('(light)                    Acidity                    (rich)')
-    axs[1].set_xlabel('(sweet)                    Sake Meter Value                    (dry)')
+    blank2 = 20
+    axs[1].set_ylabel(f'(light){" "*blank2}Acidity{" "*blank2}(rich)')
+    axs[1].set_xlabel(f'(sweet){" "*blank2}Sake Meter Value{" "*blank2}(dry)')
 
     axs[1].set_facecolor('#eafff5')
     axs[1].fill_between(x, y1, y2, where=y1 > y2, alpha=0.25, interpolate=True)
@@ -475,6 +478,99 @@ def flavor_bar_area_charts(df_flavor_area):
 
     st.pyplot(fig)
 
+def pval_df_one_sample(df_flavor_area):
+
+    # copy the dataframe
+    df_fa = df_flavor_area.copy()
+
+    # get necessary numbers
+    west_total = df_fa.loc["West", "total"]
+    north_total = df_fa.loc["North", "total"]
+
+    west_dry = df_fa.loc["West", "dry"]
+    north_dry = df_fa.loc["North", "dry"]
+    west_light = df_fa.loc["West", "light"]
+    north_light = df_fa.loc["North", "light"]
+
+    west_dry_dist = [1] * west_dry + [0] * (west_total-west_dry)
+    north_dry_dist = [1] * north_dry + [0] * (north_total-north_dry)
+    west_light_dist = [1] * west_light + [0] * (west_total-west_light)
+    north_light_dist = [1] * north_light + [0] * (north_total-north_light)
+
+    all_dry_ratio = df_fa.loc[:, "dry"].sum() / df_fa.loc[:, "total"].sum()
+    all_light_ratio = df_fa.loc[:, "light"].sum() / df_fa.loc[:, "total"].sum()
+
+    # create dictionary to loop through
+    dist_dict = {
+        'west dry distribution': [west_dry_dist, all_dry_ratio],
+        'north dry distribution': [north_dry_dist, all_dry_ratio],
+        'west light distribution': [west_light_dist, all_light_ratio],
+        'north light distribution': [north_light_dist, all_light_ratio]
+    }
+
+    # create empty dataframe to put values into
+    pval_df = pd.DataFrame(columns=['p-value'], index=dist_dict.keys())
+
+
+    # get p-values
+    for k, v in dist_dict.items():
+        pval = stats.ttest_1samp(v[0], v[1])[1]
+        pval_df.loc[k, 'p-value'] = round(pval, 6)
+
+    # conditional formatting for styling df
+    def cond_formatting(x):
+        if x < 0.05:  # significance threshold
+            return 'background-color: lightgreen'
+        else:
+            return None
+    pval_df = pval_df.style.applymap(cond_formatting)
+
+    # display df
+    st.dataframe(pval_df)
+
+def pval_df_two_sample(df_flavor_area):
+
+    # copy the dataframe
+    df_fa = df_flavor_area.copy()
+
+    # get necessary numbers
+    west_total = df_fa.loc["West", "total"]
+    north_total = df_fa.loc["North", "total"]
+
+    west_dry = df_fa.loc["West", "dry"]
+    north_dry = df_fa.loc["North", "dry"]
+    west_light = df_fa.loc["West", "light"]
+    north_light = df_fa.loc["North", "light"]
+
+    west_dry_dist = [1] * west_dry + [0] * (west_total-west_dry)
+    north_dry_dist = [1] * north_dry + [0] * (north_total-north_dry)
+    west_light_dist = [1] * west_light + [0] * (west_total-west_light)
+    north_light_dist = [1] * north_light + [0] * (north_total-north_light)
+
+    # create dictionary to loop through
+    dist_dict_2 = {
+        'west vs. north dry distributions': [west_dry_dist, north_dry_dist],
+        'west vs. north light distributions': [west_light_dist, north_light_dist],
+    }
+
+    # create empty dataframe to put values into
+    pval_df_2 = pd.DataFrame(columns=['p-value'], index=dist_dict_2.keys())
+
+    # get p-values
+    for k, v in dist_dict_2.items():
+        pval = stats.ttest_ind(v[0], v[1])[1]
+        pval_df_2.loc[k, 'p-value'] = round(pval, 6)
+
+    # conditional formatting for styling df
+    def cond_formatting(x):
+        if x < 0.05:  # significance threshold
+            return 'background-color: lightgreen'
+        else:
+            return None
+    pval_df_2 = pval_df_2.style.applymap(cond_formatting)
+
+    # display the dataframe
+    st.dataframe(pval_df_2)
 
 # map variables
 tile_light_gray = 'https://server.arcgisonline.com/arcgis/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}'
@@ -883,6 +979,67 @@ st.write(
 )
 
 flavor_bar_area_charts(df_flavor_area)
+
+st.subheader("Statistical Significance")
+
+st.write(
+    """
+    This begs the question: Is any of this variation between areas significant?  Or is the
+    variation just random fluctuations?
+
+    Running a T-test to calculate the p-value of dry / light sake by region can tell us
+    whether or not we can reject the null hypothesis that it's all just random variation!
+    """
+)
+
+pval_df_one_sample(df_flavor_area)
+
+st.write(
+    """
+    The above chart shows the p-values for north and west areas.  It compares their distributions
+    of dry and light sake compared to the mean dry / light ratios for all of Japan.  The only
+    value that is below the significance threshold of 0.05 is West's distribution of dry sake.
+    Therefore, we can reject the null hypothesis that there is no significant difference in
+    the amount of dry sake in Western Japan compared to the rest of Japan (we know from before that
+    it is less than the rest of Japan).  However, we can't say that for the other distributions
+    of sake.  Oh well!
+
+    What about comparing West and North Japan to each other, instead of to all of Japan?
+    Let's just run a two sample T-test and find out:
+    """
+)
+
+pval_df_two_sample(df_flavor_area)
+
+st.write(
+    """
+    This time, the difference in dry sake is not significant, but the difference in their
+    distributions of light sake IS signficant!
+
+    So if you wanted to make some statistical statements about dry and light sake in North and West Japan,
+    you could say two things:
+    """
+)
+
+st.markdown(
+    """
+    1. West Japan's distribution of dry sake is significantly less than the rest of Japan.
+    2. West Japan's distribution of light sake is also significantly less than that of\
+    North Japan, but not when compared to all of Japan.
+    """
+)
+
+st.header("Conclusion")
+
+st.write(
+    """
+    Sake's flavor is pretty homogenous throughout Japan.  Based on Acidity and Sake Meter Value, most
+    sake has a dry-light flavor profile no matter where you are.  The one exception appears to be West
+    Japan, which has a significantly lower ratio of dry:sweet sake than the rest of Japan.  Furthermore,
+    compared to North Japan, West Japan has a significantly lower ratio of light:rich sake (but not
+    when compared to all of Japan).
+    """
+)
 
 # st.write(
 #     """
