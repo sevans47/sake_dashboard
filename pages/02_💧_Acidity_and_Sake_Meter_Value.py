@@ -27,7 +27,6 @@ df_flavor_area = st.session_state["df_flavor_area"]
 
 
 
-
 # functions for charts
 def acid_smv_scatter_Japan(df_sake):
     # setup figure
