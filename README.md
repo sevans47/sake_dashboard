@@ -2,7 +2,7 @@
 
 Learn about the regional differences of sake made in Japan with this interactive dashboard.
 
-Click [here](https://share.streamlit.io/sevans47/sake_dashboard/sake_dashboard.py) to view the dashboard.
+Click [here](https://sevans47-sake-dashboard--sake-dashboard-6kejdp.streamlit.app/) to view the dashboard.
 
 ![screenshot](data/sake_dashboard_screenshot.jpg)
 
