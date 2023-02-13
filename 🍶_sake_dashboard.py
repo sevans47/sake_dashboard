@@ -696,7 +696,7 @@ def arrow_map():
     return m
 
 def make_sake_count_charts(df_sake):
-    # region prep
+    # japan_region prep
     regions = ['Kyūshū', 'Chūgoku', 'Shikoku', 'Kansai', 'Kantō', 'Chūbu', 'Tōhoku', 'Hokkaidō']
     r_mapping = {region: i for i, region in enumerate(regions)}
     region_counts = pd.DataFrame(df_sake.groupby('region').name.count()).rename({'name': 'num_sake'}, axis=1)
