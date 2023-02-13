@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 import requests
 from bs4 import BeautifulSoup as bs
 
+
 # configure page
 st.set_page_config(
     page_title="Sake Dashboard: Rice",
@@ -14,6 +15,7 @@ st.set_page_config(
     initial_sidebar_state="expanded",
     menu_items=None
 )
+
 
 # get data
 map_pref_region = st.session_state["map_pref_region"]
