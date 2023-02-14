@@ -4,6 +4,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.cm as cm
 import folium
+import itertools
 from scipy import stats
 from streamlit_folium import folium_static
 from folium.features import DivIcon
@@ -477,99 +478,45 @@ def flavor_bar_area_charts(df_flavor_area):
 
     st.pyplot(fig)
 
-def pval_df_one_sample(df_flavor_area):
+def chi2_to_df(regions: list, categories: list) -> pd.DataFrame:
 
-    # copy the dataframe
+    # copy df
     df_fa = df_flavor_area.copy()
 
-    # get necessary numbers
-    west_total = df_fa.loc["West", "total"]
-    north_total = df_fa.loc["North", "total"]
+    # filter df
+    df_filtered = df_fa.loc[:, categories]
 
-    west_dry = df_fa.loc["West", "dry"]
-    north_dry = df_fa.loc["North", "dry"]
-    west_light = df_fa.loc["West", "light"]
-    north_light = df_fa.loc["North", "light"]
-
-    west_dry_dist = [1] * west_dry + [0] * (west_total-west_dry)
-    north_dry_dist = [1] * north_dry + [0] * (north_total-north_dry)
-    west_light_dist = [1] * west_light + [0] * (west_total-west_light)
-    north_light_dist = [1] * north_light + [0] * (north_total-north_light)
-
-    all_dry_ratio = df_fa.loc[:, "dry"].sum() / df_fa.loc[:, "total"].sum()
-    all_light_ratio = df_fa.loc[:, "light"].sum() / df_fa.loc[:, "total"].sum()
-
-    # create dictionary to loop through
-    dist_dict = {
-        'west dry distribution': [west_dry_dist, all_dry_ratio],
-        'north dry distribution': [north_dry_dist, all_dry_ratio],
-        'west light distribution': [west_light_dist, all_light_ratio],
-        'north light distribution': [north_light_dist, all_light_ratio]
+    # create dict to fill later
+    chi_dict = {
+        'region': [],
+        'category': [],
+        'chi-2': [],
+        'p-value': [],
     }
 
-    # create empty dataframe to put values into
-    pval_df = pd.DataFrame(columns=['p-value'], index=dist_dict.keys())
+    cat_grid = list(itertools.product(regions, categories))
+
+    for reg, cat in cat_grid:
+        reg_cat1 = df_filtered.loc[reg, cat]
+        reg_cat2 = df_filtered.loc[reg, df_filtered.columns != cat].values.sum()
+        others_cat1 = df_filtered.loc[df_filtered.index != reg, cat].values.sum()
+        others_cat2 = df_filtered.loc[df_filtered.index != reg, df_filtered.columns != cat].values.sum()
+
+        observed = [[reg_cat1, others_cat1], [reg_cat2, others_cat2]]
+
+        chi2, p, dof, expected = stats.chi2_contingency(observed)
+
+        chi_dict['region'].append(reg)
+        chi_dict['category'].append(cat)
+        chi_dict['chi-2'].append(chi2)
+        chi_dict['p-value'].append(p)
+
+    if len(categories) > 2:
+        return pd.DataFrame.from_dict(chi_dict)
+
+    return pd.DataFrame.from_dict(chi_dict).drop_duplicates(subset=['region']).reset_index(drop=True)
 
 
-    # get p-values
-    for k, v in dist_dict.items():
-        pval = stats.ttest_1samp(v[0], v[1])[1]
-        pval_df.loc[k, 'p-value'] = round(pval, 6)
-
-    # conditional formatting for styling df
-    def cond_formatting(x):
-        if x < 0.05:  # significance threshold
-            return 'background-color: lightgreen'
-        else:
-            return None
-    pval_df = pval_df.style.applymap(cond_formatting)
-
-    # display df
-    st.dataframe(pval_df)
-
-def pval_df_two_sample(df_flavor_area):
-
-    # copy the dataframe
-    df_fa = df_flavor_area.copy()
-
-    # get necessary numbers
-    west_total = df_fa.loc["West", "total"]
-    north_total = df_fa.loc["North", "total"]
-
-    west_dry = df_fa.loc["West", "dry"]
-    north_dry = df_fa.loc["North", "dry"]
-    west_light = df_fa.loc["West", "light"]
-    north_light = df_fa.loc["North", "light"]
-
-    west_dry_dist = [1] * west_dry + [0] * (west_total-west_dry)
-    north_dry_dist = [1] * north_dry + [0] * (north_total-north_dry)
-    west_light_dist = [1] * west_light + [0] * (west_total-west_light)
-    north_light_dist = [1] * north_light + [0] * (north_total-north_light)
-
-    # create dictionary to loop through
-    dist_dict_2 = {
-        'west vs. north dry distributions': [west_dry_dist, north_dry_dist],
-        'west vs. north light distributions': [west_light_dist, north_light_dist],
-    }
-
-    # create empty dataframe to put values into
-    pval_df_2 = pd.DataFrame(columns=['p-value'], index=dist_dict_2.keys())
-
-    # get p-values
-    for k, v in dist_dict_2.items():
-        pval = stats.ttest_ind(v[0], v[1])[1]
-        pval_df_2.loc[k, 'p-value'] = round(pval, 6)
-
-    # conditional formatting for styling df
-    def cond_formatting(x):
-        if x < 0.05:  # significance threshold
-            return 'background-color: lightgreen'
-        else:
-            return None
-    pval_df_2 = pval_df_2.style.applymap(cond_formatting)
-
-    # display the dataframe
-    st.dataframe(pval_df_2)
 
 # map variables
 tile_light_gray = 'https://server.arcgisonline.com/arcgis/rest/services/Canvas/World_Light_Gray_Base/MapServer/tile/{z}/{y}/{x}'
@@ -984,47 +931,82 @@ st.subheader("Statistical Significance")
 st.write(
     """
     This begs the question: Is any of this variation between areas significant?  Or is the
-    variation just random fluctuations?
+    variation just random fluctuations?  Let's use hypothesis testing to find out!
 
-    Running a T-test to calculate the p-value of dry / light sake by region can tell us
-    whether or not we can reject the null hypothesis that it's all just random variation!
+    For our dataset, let's use a chi-squared test!  For this test, we choose two categorical
+    variables, for example "Area" (North, Central, Central West, West) and "Dry" (dry, not dry),
+    and sum up the values for each category to create what's called a contingency table.  Using
+    this, we can run a chi-squared test, which will tell us whether the distribution of
+    dry sake for each region is statistically significant compared to the whole dataset.
+
+    The test will return a chi-squared statistic and a p-value. The chi-squared statistic is measures
+    the difference between the observed and expected counts in the contingency table.  The higher the chi-squared statistic,
+    the more the distribution of one variable differs significantly across the categories
+    of the other variable.  The p-value is the probability of observing the calculated
+    chi-squared statistic if the null hypothesis were true.  If we get a p-value
+    below 0.05, we can reject the null hypothesis and conclude that there is a statistically
+    significant difference between the observed and expected values.
+
+    I ran a bunch of chi-squared tests comparing each region to the rest of Japan for dry sake,
+    and also for light sake.  Here are the results with p-values less than 0.05:
     """
 )
 
-pval_df_one_sample(df_flavor_area)
+regions = list(df_flavor_area.index.values)
+cats1 = ['dry', 'sweet']
+dry_df = chi2_to_df(regions, cats1)
+
+cats2 = ['light', 'rich']
+light_df = chi2_to_df(regions, cats2)
+
+dry_light_df = pd.concat((dry_df, light_df))
+dl_df = dry_light_df[dry_light_df['p-value'] < 0.05]
+
+st.dataframe(dl_df)
 
 st.write(
     """
-    The above chart shows the p-values for north and west areas.  It compares their distributions
-    of dry and light sake compared to the mean dry / light ratios for all of Japan.  The only
-    value that is below the significance threshold of 0.05 is West's distribution of dry sake.
-    Therefore, we can reject the null hypothesis that there is no significant difference in
-    the amount of dry sake in Western Japan compared to the rest of Japan (we know from before that
-    it is less than the rest of Japan).  However, we can't say that for the other distributions
-    of sake.  Oh well!
+    What this shows is that when it comes to dry sake, West Japan's distribution is
+    significantly different compared to the rest of Japan.  Likewise, for light sake,
+    North Japan is significantly different.
 
-    What about comparing West and North Japan to each other, instead of to all of Japan?
-    Let's just run a two sample T-test and find out:
-    """
-)
-
-pval_df_two_sample(df_flavor_area)
-
-st.write(
-    """
-    This time, the difference in dry sake is not significant, but the difference in their
-    distributions of light sake IS signficant!
-
-    So if you wanted to make some statistical statements about dry and light sake in North and West Japan,
-    you could say two things:
+    But significant in what way?  We know from before that West Japan has less dry sake
+    (ie sweet sake) than the rest of Japan, and North Japan has more light sake.  So,
+    statistically, we can say the following:
     """
 )
 
 st.markdown(
     """
-    1. West Japan's distribution of dry sake is significantly less than the rest of Japan.
-    2. West Japan's distribution of light sake is also significantly less than that of\
-    North Japan, but not when compared to all of Japan.
+    - West Japan's distribution of dry sake is less than the rest of Japan in a way that is significant
+    - North Japan's distribution of light sake is more than the rest of Japan in a way that is significant
+    """
+)
+
+st.write(
+    """
+    What about for our flavor profiles (dry-light, sweet-rich, etc.)?  Let's run the
+    chi-squared test and see what's up!
+    """
+)
+
+cats3 = ['dry_light', 'dry_rich', 'sweet_light', 'sweet_rich']
+df_flavor_profile = chi2_to_df(regions, cats3)
+df_fp = df_flavor_profile[df_flavor_profile['p-value'] < 0.05].reset_index(drop=True)
+st.dataframe(df_fp)
+
+st.write(
+    """
+    Wow! So West Japan's distribution of dry-light sake and sweet-rich sake is quite a bit
+    different from the rest of Japan.  Notice how much smaller the sweet-rich p-value is (and
+    accordingly, how much higher the chi-squared statistic is).  We know that West Japan has a
+    higher ratio of sweet-rich sake, so we can say that it's distribution of sweet-rich sake
+    is more in a way that is VERY signficant!
+
+    Finally, West Central's distribution of dry-rich sake is higher than the rest of Japan
+    in a significant way.  For the rest of the areas and flavor profiles, we can't say
+    that they're significantly different, and that any variation in the data is just
+    down to chance.
     """
 )
 
@@ -1033,23 +1015,22 @@ st.header("Conclusion")
 st.write(
     """
     Sake's flavor is pretty homogenous throughout Japan.  Based on Acidity and Sake Meter Value, most
-    sake has a dry-light flavor profile no matter where you are.  The one exception appears to be West
-    Japan, which has a significantly lower ratio of dry:sweet sake than the rest of Japan.  Furthermore,
-    compared to North Japan, West Japan has a significantly lower ratio of light:rich sake (but not
-    when compared to all of Japan).
+    sake has a dry-light flavor profile no matter where you are.  The one big exception appears to be West
+    Japan, whose ratio of sweet-rich sake is higher than the rest of Japan's in a way that is
+    statistically significant.
+
+    So, if you wanted to generalize a bit about the areas of Japan, you could say the following:
     """
 )
 
-# st.write(
-#     """
-#     Perhaps this lack of sweet sake is why there is actually a special type
-#     of extra sweet sake, but no special extra dry sake.  sake that is extra sweet, called Kijoshu.  However, as far as I know, there is no special
-#     category for extra dry sake, because having a sweet sake is so much rarer.
+st.markdown(
+    """
+    - **North Japan**: It has more light sake!
+    - **Central West Japan**: It has more dry-rich sake!
+    - **West Japan**: It has a lot more sweet-rich sake!
+    """
+)
 
-#     (By the way, Kijoshu is kind of like fortified sake.  As a point of reference, the
-#     median SMV for all sake in this dataset is +3.0, but for kijoshu it's -47.0!)
-#     """
-# )
 
 st.markdown("""---""")
 st.subheader("Notes")
@@ -1062,11 +1043,11 @@ st.markdown("""
 """, unsafe_allow_html=True)
 
 note = """
-*I've seen this chart parroted around the internet several times, but haven't been able
+* I've seen this chart parroted around the internet several times, but haven't been able
 to find a source for it.  Please get in touch if you know what the official name for this
 chart is, or where it originated!  I'd love to find out.
 
-**There's a calculation called Amakarado which is a combination of SMV and Acidity.  It's
+** There's a calculation called Amakarado which is a combination of SMV and Acidity.  It's
 supposed to give a better indication of the sweetness of a sake than SMV alone.  Also, it
 is much more intuitive than SMV in that a high Amakarado means sweeter sake, and vice versa.
 For a bit of context, in the straight / skewed plot comparisons above, the Amakarado of the red X is about 0.8, and
