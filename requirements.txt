@@ -1,3 +1,4 @@
+altair<5
 branca==0.5.0
 bs4==0.0.1
 folium==0.12.1.post1
